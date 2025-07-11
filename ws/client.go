@@ -35,7 +35,12 @@ func Subscribe(url string) {
 				log.Println("client read error:", err)
 				if websocket.IsUnexpectedCloseError(err) {
 					log.Println("Connection closed unexpectedly, attempting to reconnect...")
-					reconnectToServer(url)
+					clientConn, err = reconnectToServer(url)
+					if err != nil {
+						log.Fatalf("Failed to reconnect to server: %v", err)
+					}
+				} else {
+					log.Println("Non-fatal error, breaking the loop.")
 				}
 				break
 			}
