@@ -48,7 +48,7 @@ func SendToServer(msg []byte) error {
 	defer clientMu.Unlock()
 
 	if clientConn == nil {
-		return ErrClientNotConnected
+		return fmt.Errorf("client is not connected")
 	}
 	return clientConn.WriteMessage(websocket.TextMessage, msg)
 }
@@ -58,7 +58,8 @@ func reconnectToServer(url string) error {
 		if clientConn != nil {
 			clientConn.Close()
 		}
-		_, _, err := websocket.DefaultDialer.Dial(url, nil)
+		var err error
+		clientConn, _, err = websocket.DefaultDialer.Dial(url, nil)
 		if err != nil {
 			log.Printf("Reconnect attempt %d failed: %v", i+1, err)
 			time.Sleep(reconnectDelay)
