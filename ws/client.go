@@ -13,7 +13,7 @@ var (
 	clientConn           *websocket.Conn
 	clientMu             sync.Mutex
 	clientReceiveHandler func([]byte)
-	maxReconnectAttempts = 3
+	maxReconnectAttempts = 5
 	reconnectDelay       = 2 * time.Second
 )
 
@@ -55,13 +55,9 @@ func SendToServer(msg []byte) error {
 
 func reconnectToServer(url string) error {
 	for i := 0; i < maxReconnectAttempts; i++ {
-		clientMu.Lock()
-		defer clientMu.Unlock()
-
 		if clientConn != nil {
 			clientConn.Close()
 		}
-
 		_, _, err := websocket.DefaultDialer.Dial(url, nil)
 		if err != nil {
 			log.Printf("Reconnect attempt %d failed: %v", i+1, err)
