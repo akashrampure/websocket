@@ -4,16 +4,26 @@ import (
 	"log"
 	"net/http"
 	"time"
+
+	"github.com/gorilla/websocket"
 )
+
+var upgrader = websocket.Upgrader{
+	CheckOrigin: func(r *http.Request) bool {
+		return true // restrict in prod
+	},
+}
+
+var onReceive MessageHandler
 
 func wsHandler(w http.ResponseWriter, r *http.Request) {
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
-		log.Println("upgrade failed:", err)
+		log.Println("upgrade error:", err)
 		return
 	}
 
-	clientID := r.RemoteAddr
+	clientID := r.RemoteAddr // or generate UUID
 	addClient(clientID, conn)
 	defer removeClient(clientID)
 
@@ -30,8 +40,8 @@ func wsHandler(w http.ResponseWriter, r *http.Request) {
 			log.Println("read error:", err)
 			break
 		}
-		if handlerFunc != nil {
-			handlerFunc(clientID, msg)
+		if onReceive != nil {
+			onReceive(clientID, msg)
 		}
 	}
 }
