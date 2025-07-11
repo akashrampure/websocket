@@ -21,7 +21,10 @@ func Subscribe(url string) {
 	var err error
 	clientConn, _, err = websocket.DefaultDialer.Dial(url, nil)
 	if err != nil {
-		reconnectToServer(url)
+		clientConn, err = reconnectToServer(url)
+		if err != nil {
+			log.Fatalf("Failed to reconnect to server: %v", err)
+		}
 	}
 	log.Println("Connected to server:", url)
 
@@ -53,7 +56,7 @@ func SendToServer(msg []byte) error {
 	return clientConn.WriteMessage(websocket.TextMessage, msg)
 }
 
-func reconnectToServer(url string) error {
+func reconnectToServer(url string) (*websocket.Conn, error) {
 	for i := 0; i < maxReconnectAttempts; i++ {
 		if clientConn != nil {
 			clientConn.Close()
@@ -65,8 +68,8 @@ func reconnectToServer(url string) error {
 			time.Sleep(reconnectDelay)
 		} else {
 			log.Println("Connected to server:", url)
-			return nil
+			return clientConn, nil
 		}
 	}
-	return fmt.Errorf("failed to reconnect to server after %d attempts", maxReconnectAttempts)
+	return nil, fmt.Errorf("failed to reconnect to server after %d attempts", maxReconnectAttempts)
 }
